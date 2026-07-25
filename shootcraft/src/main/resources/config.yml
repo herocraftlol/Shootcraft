@@ -1,0 +1,77 @@
+# ===========================================
+#           Configuration ShootCraft
+# ===========================================
+
+# Nombre de joueurs minimum pour lancer le compte a rebours du lobby
+# (peut etre surcharge par arene via /sc setminplayers)
+min-players: 2
+
+# Nombre de joueurs maximum par arene (peut etre surcharge via /sc setmaxplayers)
+max-players: 12
+
+# Duree (secondes) du compte a rebours du lobby une fois le minimum de joueurs atteint
+lobby-countdown: 20
+
+# Duree (secondes) du compte a rebours quand l'arene est pleine (demarrage accelere)
+lobby-countdown-fast: 8
+
+# Duree par defaut (secondes) d'une partie, utilisee si l'arene n'a pas de duree
+# specifique (voir /sc settime <arene> <secondes>)
+default-game-time: 180
+
+# Delai (secondes) avant qu'une arene terminee ne redevienne disponible (lobby) si
+# aucun joueur n'a clique sur "Rejouer" / "Quitter"
+restart-delay: 12
+
+# Distance minimale (blocs) recherchee entre un point de spawn et tout autre joueur
+# au moment de choisir un spawn aleatoire, pour eviter de faire reapparaitre deux
+# joueurs au meme endroit
+spawn-safe-radius: 4
+
+# ===========================================
+#              Baton magique
+# ===========================================
+wand:
+  # Anti-spam (millisecondes) entre deux tirs
+  cooldown-ms: 300
+  # Portee maximale du tir (blocs)
+  max-distance: 120
+  # Distance entre deux particules du rayon (plus petit = ligne plus dense)
+  particle-step: 0.35
+
+# ===========================================
+#                Turbo (vitesse)
+# ===========================================
+speed-boost:
+  duration-seconds: 5
+  cooldown-seconds: 10
+  # Niveau de l'effet de vitesse (0 = Vitesse I, 1 = Vitesse II, ...)
+  speed-amplifier: 1
+
+# ===========================================
+#                 Messages
+# ===========================================
+messages:
+  prefix: "&8[&b&lSHOOT&e&lCRAFT&8] &r"
+  join: "&a%player% &7a rejoint la partie &8(&f%current%&7/&f%max%&8)"
+  leave: "&c%player% &7a quitte la partie."
+  join-ingame: "&a%player% &7a rejoint la partie en cours !"
+  countdown-start: "&eLa partie commence dans &6%time%&e secondes !"
+  countdown-tick: "&eDebut dans &6%time%&e..."
+  countdown-cancelled: "&cPas assez de joueurs, compte a rebours annule."
+  game-start: "&a&lQue le combat commence !"
+  kill: "&c\u2620 &f%killer% &7a abattu &f%victim% &8(&c%kills% kills&8)"
+  game-end: "&6&l=== Fin de la partie ! ==="
+  not-enough-players: "&cPas assez de joueurs pour demarrer."
+  arena-full: "&cCette arene est complete."
+  arena-not-ready: "&cCette arene n'est pas encore configuree."
+  arena-not-found: "&cAucune arene nommee '%arena%' n'existe."
+  already-in-game: "&cTu es deja dans une partie. Utilise /sc leave pour la quitter."
+  not-in-game: "&cTu n'es pas dans une partie."
+  no-permission: "&cTu n'as pas la permission."
+  no-arena-available: "&cAucune arene disponible pour le moment."
+  speed-boost-activate: "&b\u21af Turbo active !"
+  speed-boost-cooldown: "&cTurbo en recharge... &7(%time%s)"
+
+scoreboard:
+  title: "&b&lSHOOT&e&lCRAFT"
