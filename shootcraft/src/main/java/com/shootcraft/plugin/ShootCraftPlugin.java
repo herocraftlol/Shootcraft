@@ -4,6 +4,7 @@ import com.shootcraft.plugin.commands.ShootCraftCommand;
 import com.shootcraft.plugin.game.ArenaManager;
 import com.shootcraft.plugin.gui.ArenaGUI;
 import com.shootcraft.plugin.gui.ArenaGUIListener;
+import com.shootcraft.plugin.listeners.ForceStartItemListener;
 import com.shootcraft.plugin.listeners.LeaveItemListener;
 import com.shootcraft.plugin.listeners.PlayerConnectionListener;
 import com.shootcraft.plugin.listeners.PlayerDeathListener;
@@ -45,6 +46,7 @@ public class ShootCraftPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new WandListener(this), this);
         getServer().getPluginManager().registerEvents(new SpeedBoostListener(this), this);
         getServer().getPluginManager().registerEvents(new LeaveItemListener(this), this);
+        getServer().getPluginManager().registerEvents(new ForceStartItemListener(this), this);
         getServer().getPluginManager().registerEvents(new ProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerRespawnListener(this), this);

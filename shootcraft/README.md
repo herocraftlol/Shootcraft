@@ -9,6 +9,7 @@
 - **Système de kills** : Un tir qui touche un adversaire le tue instantanément, le tireur marque un point
 - **Turbo** : Un objet de type plume offrant un boost de vitesse de 5 secondes, rechargable toutes les 10 secondes
 - **Respawn intelligent** : Les joueurs réapparaissent sur un point aléatoire de l'arène, en évitant la proximité avec d'autres joueurs
+- **Force Start** : Les admins reçoivent un diamant dans le lobby pour forcer le démarrage immédiat de la partie
 
 ### 🏟️ Multi-Arena
 - Création et gestion de **plusieurs arènes** simultanément
@@ -103,5 +104,5 @@ Le fichier JAR final se trouve dans `target/ShootCraft.jar`.
 
 ⭐ N'hésitez pas à laisser une étoile si ce plugin vous plaît !
 
-**Version** : 1.0.0
+**Version** : 1.1.0
 **License** : MIT

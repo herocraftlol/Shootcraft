@@ -20,6 +20,7 @@ public final class ItemUtil {
     public static final String WAND_NAME = ChatColor.AQUA + "" + ChatColor.BOLD + "Baton Magique";
     public static final String SPEED_NAME = ChatColor.YELLOW + "" + ChatColor.BOLD + "Turbo \u21af";
     public static final String LEAVE_NAME = ChatColor.RED + "" + ChatColor.BOLD + "Quitter la partie";
+    public static final String FORCE_START_NAME = ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Forcer le demarrage";
 
     private ItemUtil() {
     }
@@ -61,6 +62,25 @@ public final class ItemUtil {
         return item;
     }
 
+    /**
+     * Item reserve aux admins, disponible uniquement dans la salle d'attente
+     * (lobby) : permet de forcer le demarrage immediat de la partie sans
+     * attendre la fin du compte a rebours ni le nombre minimum de joueurs.
+     */
+    public static ItemStack buildForceStartItem() {
+        ItemStack item = new ItemStack(Material.DIAMOND);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(FORCE_START_NAME);
+        meta.setLore(List.of(
+                ChatColor.GRAY + "Clic droit pour forcer le demarrage",
+                ChatColor.GRAY + "de la partie (reserve aux admins).",
+                ChatColor.DARK_GRAY + "Necessite au moins 2 joueurs."
+        ));
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        item.setItemMeta(meta);
+        return item;
+    }
+
     public static boolean isWand(ItemStack item) {
         return hasName(item, WAND_NAME);
     }
@@ -71,6 +91,10 @@ public final class ItemUtil {
 
     public static boolean isLeaveItem(ItemStack item) {
         return hasName(item, LEAVE_NAME);
+    }
+
+    public static boolean isForceStartItem(ItemStack item) {
+        return hasName(item, FORCE_START_NAME);
     }
 
     private static boolean hasName(ItemStack item, String name) {

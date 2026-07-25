@@ -452,6 +452,20 @@ public class GameManager {
         player.getActivePotionEffects().forEach(eff -> player.removePotionEffect(eff.getType()));
         if (state == GameState.PLAYING) {
             preparePlayerForCombat(player);
+        } else {
+            giveLobbyItems(player);
+        }
+    }
+
+    /**
+     * Equipe les items disponibles pendant la salle d'attente (lobby). Pour
+     * l'instant, seul un item reserve aux admins est donne : un diamant en
+     * premier slot de la hotbar qui permet de forcer le demarrage de la
+     * partie sans attendre le compte a rebours ni le minimum de joueurs.
+     */
+    private void giveLobbyItems(Player player) {
+        if (player.hasPermission("shootcraft.admin")) {
+            player.getInventory().setItem(0, com.shootcraft.plugin.util.ItemUtil.buildForceStartItem());
         }
     }
 
