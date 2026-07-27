@@ -1,12 +1,13 @@
 # ShootCraft 🎯
 
-**ShootCraft** est un plugin Minecraft Paper 1.21 offrant un mini-jeu PvP palpitant où les joueurs s'affrontent avec des bâtons magiques dans des arènes personnalisables.
+**ShootCraft** est un plugin Minecraft Paper 1.21+ offrant un mini-jeu PvP palpitant où les joueurs s'affrontent avec des bâtons magiques dans des arènes personnalisables.
 
 ## ✨ Fonctionnalités
 
 ### 🎮 Gameplay
 - **Combat tactique** : Chaque joueur dispose d'un **bâton magique** (Blaze Rod) qui tire un rayon quasi-instantané avec effet visuel de particules
 - **Système de kills** : Un tir qui touche un adversaire le tue instantanément, le tireur marque un point
+- **Multi-kill** : Toucher plusieurs joueurs d'un seul tir déclenche des annonces de double/triple/quadruple kill dans le chat
 - **Turbo** : Un objet de type plume offrant un boost de vitesse de 5 secondes, rechargable toutes les 10 secondes
 - **Respawn intelligent** : Les joueurs réapparaissent sur un point aléatoire de l'arène, en évitant la proximité avec d'autres joueurs
 - **Force Start** : Les admins reçoivent un diamant dans le lobby pour forcer le démarrage immédiat de la partie
@@ -22,6 +23,7 @@
 - **Sidebar dynamique** affichant le temps restant et le classement en temps réel
 - **Join en cours de partie** possible jusqu'à la fin du timer
 - **Classement final** avec options de rejouer/quitter
+- **Protection** en zone de jeu (anti-chute dans le vide)
 
 ## 📋 Commandes
 
@@ -37,6 +39,7 @@ Toute la gestion s'effectue via `/sc` (alias `/shootcraft`) :
 | `/sc addspawn <nom>` | Ajoute un point de spawn |
 | `/sc delspawn <nom> <index>` | Supprime un spawn |
 | `/sc setgamezone <nom> <pos1|pos2>` | Définit la zone de jeu |
+| `/sc removegamezone <nom>` | Retire la zone de jeu |
 | `/sc setminplayers <nom> <n>` | Nombre minimum de joueurs |
 | `/sc setmaxplayers <nom> <n>` | Nombre maximum de joueurs |
 | `/sc settime <nom> <secondes>` | Durée de la partie |
@@ -73,19 +76,6 @@ Pour qu'une arène soit jouable :
 - ✅ Un lobby défini (`/sc setlobby`)
 - ✅ Au moins 2 points de spawn (`/sc addspawn`)
 
-## 📁 Structure du projet
-
-```
-src/main/java/com/shootcraft/plugin/
-├── ShootCraftPlugin.java      # Classe principale du plugin
-├── commands/                  # Gestion des commandes
-├── game/                      # Logique de jeu (GameManager, Arena, etc.)
-├── gui/                       # Interface graphique
-├── listeners/                 # Événements Bukkit
-├── scoreboard/                # Gestion du scoreboard
-└── util/                      # Utilitaires
-```
-
 ## 🛠️ Compilation
 
 ```bash
@@ -96,7 +86,7 @@ Le fichier JAR final se trouve dans `target/ShootCraft.jar`.
 
 ## 📌 Prérequis
 
-- **Serveur** : Paper ou Purpur 1.21.1+
+- **Serveur** : Paper ou Purpur 1.21+
 - **Java** : JDK 21
 - **Maven** : 3.6+
 
@@ -104,5 +94,5 @@ Le fichier JAR final se trouve dans `target/ShootCraft.jar`.
 
 ⭐ N'hésitez pas à laisser une étoile si ce plugin vous plaît !
 
-**Version** : 1.1.0
+**Version** : 1.2.0
 **License** : MIT

@@ -19,14 +19,19 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
  * Gere le tir du baton magique : clic droit -> rayon quasi-instantane (trace
- * de particules de nuage + son de type "xp"), qui tue et marque un point si il
- * touche un autre joueur de l'arene.
+ * de particules de nuage + bruit de feu d'artifice au lancement), qui tue et
+ * marque un point pour chaque joueur touche. Le rayon traverse les joueurs
+ * alignes : plusieurs victimes d'un seul tir declenchent un double/triple/
+ * quadruple kill. Un bruit de type "xp" est joue a chaque joueur abattu.
  */
 public class WandListener implements Listener {
 
@@ -72,39 +77,47 @@ public class WandListener implements Listener {
         World world = shooter.getWorld();
         Location eye = shooter.getEyeLocation();
         Vector direction = eye.getDirection().normalize();
+        Vector eyeVec = eye.toVector();
         double maxDistance = plugin.getConfig().getDouble("wand.max-distance", 120);
+        double hitRadius = plugin.getConfig().getDouble("wand.hit-radius", 0.6);
 
-        RayTraceResult entityHit = world.rayTraceEntities(eye, direction, maxDistance, 0.35, entity ->
-                entity instanceof Player target
-                        && !target.equals(shooter)
-                        && gm.isPlaying(target)
-                        && target.getGameMode() != GameMode.SPECTATOR);
-
+        // Le bloc solide le plus proche stoppe toujours le rayon.
         RayTraceResult blockHit = world.rayTraceBlocks(eye, direction, maxDistance, FluidCollisionMode.NEVER, true);
+        double blockDist = blockHit != null ? blockHit.getHitPosition().distance(eyeVec) : maxDistance;
 
-        Player victim = null;
-        Location endPoint;
+        // On cherche TOUS les joueurs alignes avec le rayon avant ce point de blocage
+        // (permet les double/triple/quadruple kills sur des joueurs en file).
+        List<Player> victims = new ArrayList<>();
+        for (Player target : gm.getOnlinePlayers()) {
+            if (target.equals(shooter) || target.getGameMode() == GameMode.SPECTATOR) continue;
 
-        double entityDist = entityHit != null ? entityHit.getHitPosition().distance(eye.toVector()) : Double.MAX_VALUE;
-        double blockDist = blockHit != null ? blockHit.getHitPosition().distance(eye.toVector()) : Double.MAX_VALUE;
+            Vector toTarget = target.getEyeLocation().toVector().subtract(eyeVec);
+            double projection = toTarget.dot(direction);
+            if (projection < -0.5 || projection > blockDist + 0.5) continue;
 
-        if (entityHit != null && entityDist <= blockDist) {
-            victim = (Player) entityHit.getHitEntity();
-            endPoint = entityHit.getHitPosition().toLocation(world);
-        } else if (blockHit != null) {
-            endPoint = blockHit.getHitPosition().toLocation(world);
-        } else {
-            endPoint = eye.clone().add(direction.clone().multiply(maxDistance));
+            Vector closestPointOnRay = direction.clone().multiply(projection);
+            double perpendicularDist = toTarget.clone().subtract(closestPointOnRay).length();
+            if (perpendicularDist <= hitRadius) {
+                victims.add(target);
+            }
         }
+        victims.sort(Comparator.comparingDouble(p -> p.getEyeLocation().toVector().subtract(eyeVec).dot(direction)));
+
+        Location endPoint = blockHit != null ? blockHit.getHitPosition().toLocation(world)
+                : eye.clone().add(direction.clone().multiply(maxDistance));
 
         drawBeam(world, eye, endPoint);
-        shooter.playSound(shooter.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+        world.playSound(eye, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1f, 1f);
 
-        if (victim != null) {
-            victim.playSound(victim.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 0.7f);
+        for (Player victim : victims) {
+            world.playSound(victim.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
             world.spawnParticle(Particle.CLOUD, victim.getEyeLocation(), 15, 0.3, 0.3, 0.3, 0.02);
             gm.registerKill(shooter, victim);
             victim.setHealth(0.0);
+        }
+
+        if (victims.size() >= 2) {
+            gm.announceMultiKill(shooter, victims.size());
         }
     }
 

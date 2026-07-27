@@ -16,6 +16,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
@@ -439,6 +441,20 @@ public class GameManager {
                 "kills", String.valueOf(killer != null ? getKills(killer.getUniqueId()) : 0)));
     }
 
+    /**
+     * Annonce un multi-kill (double, triple, quadruple...) lorsque plusieurs
+     * joueurs alignes sont abattus par un seul et meme tir de baton.
+     */
+    public void announceMultiKill(Player shooter, int count) {
+        if (count < 2) return;
+        String key = count >= 5 ? "multikill-5-plus" : "multikill-" + count;
+        String message = MessageUtil.getRaw(plugin, key, "player", shooter.getName(), "count", String.valueOf(count));
+        for (Player p : getOnlinePlayers()) {
+            p.sendMessage(message);
+            p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
+        }
+    }
+
     // ================= PREPARATION DES JOUEURS =================
 
     private void prepareForLobbyOrGame(Player player) {
@@ -477,7 +493,19 @@ public class GameManager {
         player.setFireTicks(0);
         player.setFallDistance(0f);
         player.getActivePotionEffects().forEach(eff -> player.removePotionEffect(eff.getType()));
+        applyBaseSpeed(player);
         equipKit(player);
+    }
+
+    /**
+     * Applique l'effet de vitesse permanent (Vitesse I par defaut) dont
+     * beneficient tous les joueurs pendant la partie. Le turbo (plume) vient
+     * temporairement le remplacer par un niveau superieur (voir SpeedBoostListener),
+     * avant de revenir automatiquement a ce niveau de base.
+     */
+    public void applyBaseSpeed(Player player) {
+        int amplifier = plugin.getConfig().getInt("permanent-speed-amplifier", 0);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 1_000_000, amplifier, true, false, false));
     }
 
     public void equipKit(Player player) {

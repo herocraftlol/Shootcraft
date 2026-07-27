@@ -5,6 +5,7 @@ import com.shootcraft.plugin.game.GameManager;
 import com.shootcraft.plugin.game.GameState;
 import com.shootcraft.plugin.util.ItemUtil;
 import com.shootcraft.plugin.util.MessageUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -21,9 +22,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Gere le "turbo" : clic droit sur l'item dedie -> boost de vitesse temporaire,
- * rechargeable toutes les X secondes, avec un bruit de lancement de feu
- * d'artifice au moment de l'activation.
+ * Gere le "turbo" : clic droit sur l'item dedie -> boost de vitesse ephemere
+ * (Vitesse II par defaut), rechargeable toutes les X secondes, avec un bruit
+ * de lancement de feu d'artifice au moment de l'activation. Une fois le
+ * turbo termine, le joueur retrouve la Vitesse I permanente commune a tous
+ * les joueurs pendant la partie (voir GameManager#applyBaseSpeed).
  */
 public class SpeedBoostListener implements Listener {
 
@@ -64,10 +67,22 @@ public class SpeedBoostListener implements Listener {
         int cooldownSeconds = plugin.getConfig().getInt("speed-boost.cooldown-seconds", 10);
         int amplifier = plugin.getConfig().getInt("speed-boost.speed-amplifier", 1);
 
+        // Remplace temporairement la Vitesse I permanente par le niveau du turbo.
+        player.removePotionEffect(PotionEffectType.SPEED);
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationSeconds * 20, amplifier, false, true, true));
         player.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1f, 1f);
         MessageUtil.sendKey(plugin, player, "speed-boost-activate");
 
         nextAvailable.put(player.getUniqueId(), now + cooldownSeconds * 1000L);
+
+        // Une fois le turbo termine, on revient a la vitesse de base (si la partie
+        // est toujours en cours pour ce joueur).
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) return;
+            GameManager stillIn = plugin.getArenaManager().findArenaOf(player);
+            if (stillIn != null && stillIn.getState() == GameState.PLAYING) {
+                stillIn.applyBaseSpeed(player);
+            }
+        }, durationSeconds * 20L);
     }
 }

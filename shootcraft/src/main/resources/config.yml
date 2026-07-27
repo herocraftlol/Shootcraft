@@ -28,6 +28,10 @@ restart-delay: 12
 # joueurs au meme endroit
 spawn-safe-radius: 4
 
+# Effet de vitesse permanent applique a tous les joueurs pendant la partie
+# (0 = Vitesse I, 1 = Vitesse II, ...)
+permanent-speed-amplifier: 0
+
 # ===========================================
 #              Baton magique
 # ===========================================
@@ -38,6 +42,10 @@ wand:
   max-distance: 120
   # Distance entre deux particules du rayon (plus petit = ligne plus dense)
   particle-step: 0.35
+  # Tolerance (blocs) autour de la ligne de tir pour considerer qu'un joueur
+  # est touche. Le rayon traverse les joueurs alignes (double/triple/quadruple
+  # kill possible) mais s'arrete toujours au premier bloc solide rencontre.
+  hit-radius: 0.6
 
 # ===========================================
 #                Turbo (vitesse)
@@ -61,6 +69,10 @@ messages:
   countdown-cancelled: "&cPas assez de joueurs, compte a rebours annule."
   game-start: "&a&lQue le combat commence !"
   kill: "&c\u2620 &f%killer% &7a abattu &f%victim% &8(&c%kills% kills&8)"
+  multikill-2: "&6&l\u2694 DOUBLE KILL &r&7- &f%player%"
+  multikill-3: "&6&l\u2694 TRIPLE KILL &r&7- &f%player%"
+  multikill-4: "&6&l\u2694 QUADRA KILL &r&7- &f%player%"
+  multikill-5-plus: "&6&l\u2694 %count% KILLS D'UN COUP &r&7- &f%player%"
   game-end: "&6&l=== Fin de la partie ! ==="
   not-enough-players: "&cPas assez de joueurs pour demarrer."
   arena-full: "&cCette arene est complete."
