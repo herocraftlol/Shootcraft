@@ -1,0 +1,20 @@
+name: ShootCraft
+version: 1.0.0
+main: com.shootcraft.plugin.ShootCraftPlugin
+api-version: 1.21
+author: Claude
+description: Minijeu ShootCraft - duel au baton magique en arene
+
+commands:
+  sc:
+    description: Commande principale du plugin ShootCraft
+    usage: /sc <create|delete|list|arenas|setlobby|addspawn|delspawn|setgamezone|removegamezone|setminplayers|setmaxplayers|settime|join|joinrandom|leave|start|stop|info|leaderboard>
+    aliases: [shootcraft]
+
+permissions:
+  shootcraft.admin:
+    description: Permission pour administrer/configurer les arenes ShootCraft
+    default: op
+  shootcraft.play:
+    description: Permission pour jouer a ShootCraft
+    default: true
