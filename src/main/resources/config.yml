@@ -29,8 +29,8 @@ restart-delay: 12
 spawn-safe-radius: 4
 
 # Effet de vitesse permanent applique a tous les joueurs pendant la partie
-# (0 = Vitesse I, 1 = Vitesse II, ...)
-permanent-speed-amplifier: 0
+# (0 = Vitesse I, 1 = Vitesse II, ...) - Vitesse II par defaut
+permanent-speed-amplifier: 1
 
 # Leaderboards holographiques "summonables" (/sc leaderboard), statistiques
 # permanentes (kills/morts/victoires/parties) conservees dans stats.yml
@@ -42,25 +42,30 @@ leaderboard:
 #              Baton magique
 # ===========================================
 wand:
-  # Anti-spam (millisecondes) entre deux tirs
+  # Anti-spam (millisecondes) entre deux tirs (clic droit)
   cooldown-ms: 300
   # Portee maximale du tir (blocs)
   max-distance: 120
   # Distance entre deux particules du rayon (plus petit = ligne plus dense)
   particle-step: 0.35
-  # Tolerance (blocs) autour de la ligne de tir pour considerer qu'un joueur
-  # est touche. Le rayon traverse les joueurs alignes (double/triple/quadruple
-  # kill possible) mais s'arrete toujours au premier bloc solide rencontre.
-  hit-radius: 0.6
+  # Marge (blocs) ajoutee autour de la hitbox reelle de chaque joueur pour la
+  # detection de tir (le rayon est teste contre la hitbox exacte, cette valeur
+  # ajoute juste une petite tolerance pour les tirs "limites"). Le rayon
+  # traverse les joueurs alignes (double/triple/quadruple kill possible) mais
+  # s'arrete toujours au premier bloc solide rencontre.
+  hitbox-tolerance: 0.15
 
 # ===========================================
-#                Turbo (vitesse)
+#          Boost de vitesse (clic gauche
+#          sur le baton magique)
 # ===========================================
 speed-boost:
   duration-seconds: 5
   cooldown-seconds: 10
-  # Niveau de l'effet de vitesse (0 = Vitesse I, 1 = Vitesse II, ...)
-  speed-amplifier: 1
+  # Niveau de l'effet de vitesse pendant le boost (0 = Vitesse I, 1 = Vitesse II, ...)
+  # Doit etre superieur a permanent-speed-amplifier pour que le boost soit
+  # perceptible. Vitesse IV par defaut (permanent-speed-amplifier = Vitesse II).
+  speed-amplifier: 3
 
 # ===========================================
 #                 Messages
@@ -88,8 +93,8 @@ messages:
   not-in-game: "&cTu n'es pas dans une partie."
   no-permission: "&cTu n'as pas la permission."
   no-arena-available: "&cAucune arene disponible pour le moment."
-  speed-boost-activate: "&b\u21af Turbo active !"
-  speed-boost-cooldown: "&cTurbo en recharge... &7(%time%s)"
+  speed-boost-activate: "&b\u21af Boost de vitesse active !"
+  speed-boost-cooldown: "&cBoost en recharge... &7(%time%s)"
   leaderboard-usage: "&cUsage: /sc leaderboard <victoires|kills|kd|parties> [remove|size <taille>]"
   leaderboard-unknown-category: "&cCategorie inconnue. Utilise: victoires, kills, kd ou parties."
   leaderboard-usage-remove: "&cUsage: /sc leaderboard <categorie> remove"

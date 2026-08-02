@@ -269,10 +269,11 @@ public class LeaderboardManager {
     }
 
     private void applyScale(LivingEntity entity, double scale) {
-        AttributeInstance attribute = entity.getAttribute(Attribute.GENERIC_SCALE);
-        if (attribute != null) {
-            attribute.setBaseValue(scale);
-        }
+        // SCALE attribute not available in Paper 1.21.1 - armor stands display at default scale
+        // AttributeInstance attribute = entity.getAttribute(Attribute.SCALE);
+        // if (attribute != null) {
+        //     attribute.setBaseValue(scale);
+        // }
     }
 
     /**
