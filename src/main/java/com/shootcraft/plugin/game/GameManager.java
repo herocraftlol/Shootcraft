@@ -516,10 +516,11 @@ public class GameManager {
     }
 
     /**
-     * Applique l'effet de vitesse permanent (Vitesse I par defaut) dont
-     * beneficient tous les joueurs pendant la partie. Le turbo (plume) vient
-     * temporairement le remplacer par un niveau superieur (voir SpeedBoostListener),
-     * avant de revenir automatiquement a ce niveau de base.
+     * Applique l'effet de vitesse permanent (Vitesse II par defaut) dont
+     * beneficient tous les joueurs pendant la partie. Le boost du baton (clic
+     * gauche) vient temporairement le remplacer par un niveau superieur (voir
+     * WandListener#attemptBoost), avant de revenir automatiquement a ce niveau
+     * de base une fois le boost termine.
      */
     public void applyBaseSpeed(Player player) {
         int amplifier = plugin.getConfig().getInt("permanent-speed-amplifier", 0);
@@ -530,7 +531,6 @@ public class GameManager {
         PlayerInventory inv = player.getInventory();
         inv.clear();
         inv.setItem(0, com.shootcraft.plugin.util.ItemUtil.buildWand());
-        inv.setItem(1, com.shootcraft.plugin.util.ItemUtil.buildSpeedBoostItem());
         inv.setItem(8, com.shootcraft.plugin.util.ItemUtil.buildLeaveItem());
     }
 

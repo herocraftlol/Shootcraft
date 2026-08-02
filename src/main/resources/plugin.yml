@@ -1,9 +1,9 @@
 name: ShootCraft
-version: 1.0.0
+version: 1.0.1
 main: com.shootcraft.plugin.ShootCraftPlugin
 api-version: 1.21
 author: Claude
-description: Minijeu ShootCraft - duel au baton magique en arene
+description: Mini-jeu PvP ShootCraft - duel au baton magique en arene avec systeme de kills multiples
 
 commands:
   sc:

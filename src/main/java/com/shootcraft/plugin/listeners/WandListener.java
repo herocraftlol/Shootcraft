@@ -4,6 +4,8 @@ import com.shootcraft.plugin.ShootCraftPlugin;
 import com.shootcraft.plugin.game.GameManager;
 import com.shootcraft.plugin.game.GameState;
 import com.shootcraft.plugin.util.ItemUtil;
+import com.shootcraft.plugin.util.MessageUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -14,8 +16,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
@@ -27,11 +34,20 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Gere le tir du baton magique : clic droit -> rayon quasi-instantane (trace
- * de particules de nuage + bruit de feu d'artifice au lancement), qui tue et
- * marque un point pour chaque joueur touche. Le rayon traverse les joueurs
- * alignes : plusieurs victimes d'un seul tir declenchent un double/triple/
- * quadruple kill. Un bruit de type "xp" est joue a chaque joueur abattu.
+ * Gere le baton magique dans son ensemble :
+ *   - Clic droit -> tir d'un rayon quasi-instantane (particules de nuage +
+ *     bruit de feu d'artifice au lancement), qui tue et marque un point pour
+ *     chaque joueur touche. Le rayon traverse les joueurs alignes : plusieurs
+ *     victimes d'un seul tir declenchent un double/triple/quadruple kill. Un
+ *     bruit de type "xp" est joue a chaque joueur abattu.
+ *   - Clic gauche -> boost de vitesse ephemere, rechargeable, avec un petit
+ *     bruit de levier a l'activation.
+ *
+ * Minecraft ne route pas toujours les clics vers PlayerInteractEvent : viser
+ * directement un joueur tres proche declenche PlayerInteractEntityEvent (clic
+ * droit) ou EntityDamageByEntityEvent (clic gauche, une "attaque") a la place.
+ * On ecoute donc les trois evenements pour que le tir/boost fonctionne de
+ * maniere fiable a toute distance, y compris a bout portant.
  */
 public class WandListener implements Listener {
 
@@ -39,21 +55,57 @@ public class WandListener implements Listener {
 
     /** Anti-spam : dernier tir (ms) par joueur. */
     private final Map<UUID, Long> lastShot = new HashMap<>();
+    /** Prochain instant (ms) ou le boost sera de nouveau disponible, par joueur. */
+    private final Map<UUID, Long> nextBoostAvailable = new HashMap<>();
 
     public WandListener(ShootCraftPlugin plugin) {
         this.plugin = plugin;
     }
 
+    // ================= DETECTION DES CLICS =================
+
+    /** Clic droit/gauche dans le vide ou sur un bloc. */
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) return;
         Action action = event.getAction();
-        if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
+        boolean rightClick = action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK;
+        boolean leftClick = action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK;
+        if (!rightClick && !leftClick) return;
         if (!ItemUtil.isWand(event.getItem())) return;
 
         event.setCancelled(true);
-        Player shooter = event.getPlayer();
+        if (rightClick) {
+            attemptShoot(event.getPlayer());
+        } else {
+            attemptBoost(event.getPlayer());
+        }
+    }
 
+    /** Clic droit directement sur un joueur (Minecraft n'envoie pas de PlayerInteractEvent dans ce cas). */
+    @EventHandler
+    public void onInteractEntity(PlayerInteractEntityEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND) return;
+        Player player = event.getPlayer();
+        if (!ItemUtil.isWand(player.getInventory().getItemInMainHand())) return;
+
+        event.setCancelled(true);
+        attemptShoot(player);
+    }
+
+    /** Clic gauche (attaque) directement sur un joueur ou une autre entite vivante proche. */
+    @EventHandler
+    public void onAttackEntity(EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof Player player)) return;
+        if (!ItemUtil.isWand(player.getInventory().getItemInMainHand())) return;
+
+        event.setCancelled(true);
+        attemptBoost(player);
+    }
+
+    // ================= TIR =================
+
+    private void attemptShoot(Player shooter) {
         GameManager gm = plugin.getArenaManager().findArenaOf(shooter);
         if (gm == null || gm.getState() != GameState.PLAYING) {
             return;
@@ -79,29 +131,35 @@ public class WandListener implements Listener {
         Vector direction = eye.getDirection().normalize();
         Vector eyeVec = eye.toVector();
         double maxDistance = plugin.getConfig().getDouble("wand.max-distance", 120);
-        double hitRadius = plugin.getConfig().getDouble("wand.hit-radius", 0.6);
+        double tolerance = plugin.getConfig().getDouble("wand.hitbox-tolerance", 0.15);
 
         // Le bloc solide le plus proche stoppe toujours le rayon.
         RayTraceResult blockHit = world.rayTraceBlocks(eye, direction, maxDistance, FluidCollisionMode.NEVER, true);
         double blockDist = blockHit != null ? blockHit.getHitPosition().distance(eyeVec) : maxDistance;
 
-        // On cherche TOUS les joueurs alignes avec le rayon avant ce point de blocage
-        // (permet les double/triple/quadruple kills sur des joueurs en file).
+        // On teste le rayon contre la hitbox REELLE de chaque joueur (et non plus
+        // une simple distance a un point), pour une precision fidele a la visee du
+        // joueur, y compris a bout portant (cas ou les yeux du tireur sont deja
+        // dans la hitbox de la cible).
         List<Player> victims = new ArrayList<>();
+        Map<UUID, Double> hitDistances = new HashMap<>();
+
         for (Player target : gm.getOnlinePlayers()) {
             if (target.equals(shooter) || target.getGameMode() == GameMode.SPECTATOR) continue;
 
-            Vector toTarget = target.getEyeLocation().toVector().subtract(eyeVec);
-            double projection = toTarget.dot(direction);
-            if (projection < -0.5 || projection > blockDist + 0.5) continue;
-
-            Vector closestPointOnRay = direction.clone().multiply(projection);
-            double perpendicularDist = toTarget.clone().subtract(closestPointOnRay).length();
-            if (perpendicularDist <= hitRadius) {
-                victims.add(target);
+            BoundingBox box = target.getBoundingBox().expand(tolerance);
+            double distance;
+            if (box.contains(eyeVec)) {
+                distance = 0.0;
+            } else {
+                RayTraceResult hit = box.rayTrace(eyeVec, direction, blockDist);
+                if (hit == null) continue;
+                distance = hit.getHitPosition().distance(eyeVec);
             }
+            victims.add(target);
+            hitDistances.put(target.getUniqueId(), distance);
         }
-        victims.sort(Comparator.comparingDouble(p -> p.getEyeLocation().toVector().subtract(eyeVec).dot(direction)));
+        victims.sort(Comparator.comparingDouble(p -> hitDistances.get(p.getUniqueId())));
 
         Location endPoint = blockHit != null ? blockHit.getHitPosition().toLocation(world)
                 : eye.clone().add(direction.clone().multiply(maxDistance));
@@ -136,5 +194,47 @@ public class WandListener implements Listener {
             Location point = start.clone().add(direction.clone().multiply(travelled));
             world.spawnParticle(Particle.CLOUD, point, 1, 0, 0, 0, 0);
         }
+    }
+
+    // ================= BOOST DE VITESSE (CLIC GAUCHE) =================
+
+    private void attemptBoost(Player player) {
+        GameManager gm = plugin.getArenaManager().findArenaOf(player);
+        if (gm == null || gm.getState() != GameState.PLAYING) {
+            return;
+        }
+        if (player.getGameMode() == GameMode.SPECTATOR) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        Long ready = nextBoostAvailable.get(player.getUniqueId());
+        if (ready != null && now < ready) {
+            long remainingSec = (ready - now + 999) / 1000;
+            MessageUtil.sendKey(plugin, player, "speed-boost-cooldown", "time", String.valueOf(remainingSec));
+            return;
+        }
+
+        int durationSeconds = plugin.getConfig().getInt("speed-boost.duration-seconds", 5);
+        int cooldownSeconds = plugin.getConfig().getInt("speed-boost.cooldown-seconds", 10);
+        int amplifier = plugin.getConfig().getInt("speed-boost.speed-amplifier", 3);
+
+        // Remplace temporairement la vitesse permanente par le niveau du boost.
+        player.removePotionEffect(PotionEffectType.SPEED);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, durationSeconds * 20, amplifier, false, true, true));
+        player.playSound(player.getLocation(), Sound.BLOCK_LEVER_CLICK, 0.7f, 1.4f);
+        MessageUtil.sendKey(plugin, player, "speed-boost-activate");
+
+        nextBoostAvailable.put(player.getUniqueId(), now + cooldownSeconds * 1000L);
+
+        // Une fois le boost termine, on revient a la vitesse de base (si la partie
+        // est toujours en cours pour ce joueur).
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) return;
+            GameManager stillIn = plugin.getArenaManager().findArenaOf(player);
+            if (stillIn != null && stillIn.getState() == GameState.PLAYING) {
+                stillIn.applyBaseSpeed(player);
+            }
+        }, durationSeconds * 20L);
     }
 }
